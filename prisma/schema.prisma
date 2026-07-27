@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+enum SlideType {
+  TITLE
+  VERSE
+  CHORUS
+  BRIDGE
+  ENDING
+  CUSTOM
+}
+
+enum ProjectionType {
+  HYMN
+  PROGRAM
+  SERVICE_LIST
+}
+
+enum ProjectionStatus {
+  WAITING
+  RUNNING
+  PAUSED
+  FINISHED
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role     @default(OPERATOR)
+
+  projections Projection[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Background {
+  id           String @id @default(uuid())
+
+  name         String
+
+  imageUrl     String
+
+  thumbnailUrl String?
+
+  hymns        Hymn[]
+
+  programSlides ProgramSlide[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Hymn {
+
+  id String @id @default(uuid())
+
+  number Int?
+
+  title String
+
+  author String?
+
+  category String?
+
+  page Int?
+
+  lyrics String @db.Text
+
+  tags String?
+
+  favorite Boolean @default(false)
+
+  useCount Int @default(0)
+
+  lastUsedAt DateTime?
+
+  backgroundId String?
+
+  background Background? @relation(fields:[backgroundId], references:[id])
+
+  sections HymnSection[]
+
+  slides HymnSlide[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}
+
+model HymnSection {
+
+  id String @id @default(uuid())
+
+  hymnId String
+
+  hymn Hymn @relation(fields:[hymnId], references:[id], onDelete: Cascade)
+
+  order Int
+
+  type SlideType
+
+  title String?
+
+  content String @db.Text
+}
+
+model HymnSlide {
+
+  id String @id @default(uuid())
+
+  hymnId String
+
+  hymn Hymn @relation(fields:[hymnId], references:[id], onDelete: Cascade)
+
+  order Int
+
+  type SlideType
+
+  title String?
+
+  content String @db.Text
+}
+
+model Program {
+
+  id String @id @default(uuid())
+
+  title String
+
+  presentedBy String?
+
+  slides ProgramSlide[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}
+
+model ProgramSlide {
+
+  id String @id @default(uuid())
+
+  programId String
+
+  program Program @relation(fields:[programId], references:[id], onDelete: Cascade)
+
+  order Int
+
+  speaker String?
+
+  title String?
+
+  content String @db.Text
+
+  backgroundId String?
+
+  background Background? @relation(fields:[backgroundId], references:[id])
+}
+
+model ServiceList {
+
+  id String @id @default(uuid())
+
+  title String
+
+  serviceDate DateTime?
+
+  sections ServiceListSection[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}
+
+model ServiceListSection {
+
+  id String @id @default(uuid())
+
+  serviceListId String
+
+  serviceList ServiceList @relation(fields:[serviceListId], references:[id], onDelete: Cascade)
+
+  name String
+
+  order Int
+
+  items ServiceListItem[]
+}
+
+model ServiceListItem {
+
+  id String @id @default(uuid())
+
+  sectionId String
+
+  section ServiceListSection @relation(fields:[sectionId], references:[id], onDelete: Cascade)
+
+  folder Int?
+
+  page Int?
+
+  title String
+
+  order Int
+}
+
+model Projection {
+
+  id String @id @default(uuid())
+
+  type ProjectionType
+
+  referenceId String
+
+  currentSlide Int @default(0)
+
+  status ProjectionStatus @default(WAITING)
+
+  createdById String
+
+  createdBy User @relation(fields:[createdById], references:[id])
+
+  history ProjectionHistory[]
+
+  startedAt DateTime?
+
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model ProjectionHistory {
+
+  id String @id @default(uuid())
+
+  projectionId String
+
+  projection Projection @relation(fields:[projectionId], references:[id], onDelete: Cascade)
+
+  slide Int
+
+  action String
+
+  createdAt DateTime @default(now())
+}

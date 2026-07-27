@@ -1,0 +1,1 @@
+export const HYMN_REPOSITORY = Symbol('HYMN_REPOSITORY');
